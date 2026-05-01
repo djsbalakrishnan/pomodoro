@@ -1,46 +1,101 @@
-# Getting Started with Create React App
+# Pomodoro
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A minimal, dark-themed Pomodoro timer built for focused work sessions. Designed for students and teachers — pick a duration, name your task, start the timer, and let the background sound keep you in flow. Session history is stored locally so your stats are always there when you return.
 
-## Available Scripts
+Live at [pomodoro.dhirajbalakrishnan.dev](https://pomodoro.dhirajbalakrishnan.dev)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **Configurable duration** — quick-select presets (15, 20, 25, 30, 45, 60 min) or type a custom value
+- **Task label** — optionally name what you're working on before starting
+- **Countdown timer** — large display with an SVG progress ring that fills as the session runs
+- **Start / Pause / Resume / Reset** — full timer control; settings are locked while running
+- **Completion chime** — a three-note Web Audio chime plays automatically when the session ends
+- **Background sounds** — Rainfall, Ocean Waves, or Ambient Lo-fi; Play/Pause/Stop with volume slider
+- **Session history** — every completed session is saved to `localStorage` with timestamp, task, and duration
+- **Statistics dashboard** — total Pomodoros completed in the last 24 h, 7 days, 30 days, and 365 days
+- **Recent sessions list** — last 10 completed sessions with time, task name, and duration
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+---
 
-### `npm test`
+## Architecture
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```mermaid
+graph TD
+    User["Browser (User)"]
+    App["App.tsx\n(root state)"]
+    Timer["useTimer\n(countdown state machine)"]
+    Audio["useAudio\n(HTMLAudioElement)"]
+    Stats["useStats\n(date-fns aggregation)"]
+    Storage["storage.ts\n(localStorage)"]
+    Sounds["public/sounds/\n(static MP3s)"]
 
-### `npm run build`
+    User -->|interacts| App
+    App --> Timer
+    App --> Audio
+    App --> Stats
+    Timer -->|onComplete| Storage
+    Stats -->|reads| Storage
+    Audio -->|loads| Sounds
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Flow Diagram — Pomodoro Session
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```mermaid
+stateDiagram-v2
+    [*] --> idle : page load
+    idle --> running : Start
+    running --> paused : Pause
+    paused --> running : Resume
+    paused --> idle : Reset
+    running --> idle : Reset
+    running --> completed : timeLeft reaches 0
+    completed --> idle : New Session
 
-### `npm run eject`
+    completed --> [*] : saves record to localStorage\nplays chime\nupdates stats
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Tech Stack
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+| Layer | Technology |
+|---|---|
+| Framework | React 19 (Create React App) |
+| Language | TypeScript |
+| Styling | Plain CSS with CSS custom properties (dark theme) |
+| Date utilities | date-fns v4 |
+| Audio | HTML5 `Audio` element (background music) + Web Audio API (chime) |
+| Persistence | Browser `localStorage` |
+| Fonts | Inter + JetBrains Mono (Google Fonts) |
+| Hosting | Vercel (static) |
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+---
 
-## Learn More
+## Quick Start
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+See [help/dev.md](help/dev.md) for local setup and [help/prod.md](help/prod.md) for deployment.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm install
+npm start        # http://localhost:3000
+npm run build    # production bundle → build/
+```
+
+---
+
+## Environment Variables
+
+This app has no environment variables. It is entirely client-side with no backend.
+
+Audio files must be placed in `public/sounds/` before running:
+
+| File | Description |
+|---|---|
+| `public/sounds/rainfall.mp3` | Rainfall background loop |
+| `public/sounds/ocean.mp3` | Ocean waves background loop |
+| `public/sounds/ambient.mp3` | Ambient / Lo-fi background loop |
